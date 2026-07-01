@@ -1,0 +1,30 @@
+{
+  "summary": "First-finish smoke tests for CodeLens after code-review fixes (SHA-256 signature, stable React keys, console.error logging). All 13 backend checks and all 5 frontend flows passed. Live watch mode verified end-to-end (backend + UI).",
+  "tested_scope": ["backend", "frontend", "integration"],
+  "passed": [
+    "POST /api/repos/local imports /app/backend; returns id, last_signature (SHA-256, 64 hex), last_synced_at",
+    "GET /overview: frameworks=['FastAPI','MongoDB'], stats.python_files=4, has_backend=true, requirements='requirements.txt'",
+    "GET /endpoints: 21 endpoints, all with method+path+file+line",
+    "GET /models: 6 Pydantic models (Repo, Annotation, ImportLocalRequest, ImportGithubRequest, AnnotationCreate, WatchToggle), no duplicate (name,file,line) tuples",
+    "GET /dependencies: nodes=4, edges=3 (non-zero, import resolution working)",
+    "GET /components: returns 2 items on backend repo (works, empty JS/TS as expected)",
+    "GET /file?path=server.py: size=11662, content_len=11660",
+    "GET /search?q=BaseModel: multiple hits returned in {results:[...]}",
+    "POST /annotations creates, GET lists, DELETE removes (verified count went 1->0)",
+    "POST /watch {enabled:true} -> watch_enabled=true",
+    "LIVE WATCH: created /tmp/wtest local repo, enabled watch, appended to main.py; after 7s last_synced_at changed (13:12:14 -> 13:12:17) and GET /file returned updated content",
+    "POST /refresh manually re-syncs, returns file_count=7 and new last_synced_at",
+    "DELETE /repos/{id} removes repo (404 after), storage dir deleted, annotations deleted",
+    "Frontend Import: 3 tabs (upload/local/github) visible; local path import navigates to /repo/<id>/overview",
+    "Overview: framework-FastAPI and framework-MongoDB visible; 7 sidebar nav items present",
+    "Endpoints view: 21 rows rendered; clicking a row navigates to /explorer with code-viewer visible",
+    "Live Watch UI: Refresh + Watch buttons in header; Watch -> 'Watching' (green) -> back to 'Watch' works; toast 'Watch mode ON/OFF' shown",
+    "Search: typing 'BaseModel' returns 7 results in dropdown; clicking a result opens models.py in code-viewer"
+  ],
+  "failed": [],
+  "action_items": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "retest_needed": false,
+  "full_testing_deferred": true,
+  "notes": "Minor: Sonner toast overlay briefly intercepts pointer events after watch toggle; a second immediate click may be blocked. Not a bug (UX toast, dismisses on its own or with force=True). No console errors observed. Test repos and /tmp/wtest cleaned up."
+}

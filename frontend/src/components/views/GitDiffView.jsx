@@ -73,12 +73,12 @@ export default function GitDiffView({ repoId, onOpenFile }) {
           {data.changed_files.length === 0 ? (
             <div className="p-6 text-xs font-mono text-zinc-500">working tree clean</div>
           ) : (
-            data.changed_files.map((c, i) => {
+            data.changed_files.map((c) => {
               const Icon = CHANGE_ICON[c.change_type] || FileCode;
               return (
                 <button
-                  key={i}
-                  data-testid={`diff-file-${i}`}
+                  key={`${c.path}-${c.staged ? "s" : "u"}`}
+                  data-testid={`diff-file-${c.path}`}
                   onClick={() => setSelected(c.path)}
                   className={`w-full text-left px-3 py-2 border-b border-zinc-800 hover:bg-[#18181b] border-l-2 ${
                     selected === c.path
@@ -106,11 +106,11 @@ export default function GitDiffView({ repoId, onOpenFile }) {
               recent commits
             </div>
           </div>
-          {data.recent_commits.map((c, i) => (
+          {data.recent_commits.map((c) => (
             <div
-              key={i}
+              key={c.sha}
               className="px-3 py-2 border-b border-zinc-800"
-              data-testid={`commit-${i}`}
+              data-testid={`commit-${c.sha}`}
             >
               <div className="flex items-center gap-2">
                 <GitCommit className="w-3 h-3 text-zinc-500 shrink-0" />

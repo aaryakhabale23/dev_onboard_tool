@@ -168,7 +168,7 @@ def compute_signature(source_path: str) -> str:
     IGNORE = {"node_modules", ".git", "__pycache__", ".venv", "venv", "dist",
               "build", ".next", ".cache", ".pytest_cache", ".mypy_cache",
               ".idea", ".vscode", "target", "out", ".turbo"}
-    h = hashlib.md5()
+    h = hashlib.sha256()
     root = Path(source_path)
     if not root.exists():
         return ""

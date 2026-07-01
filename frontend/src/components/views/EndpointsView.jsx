@@ -65,12 +65,12 @@ export default function EndpointsView({ repoId, onOpenFile }) {
           ) : (
             <table className="w-full font-mono text-xs">
               <tbody>
-                {endpoints.map((ep, i) => (
+                {endpoints.map((ep) => (
                   <tr
-                    key={i}
+                    key={`${ep.method}-${ep.path}-${ep.file}-${ep.line}`}
                     onClick={() => onOpenFile(ep.file, ep.line)}
                     className="border-b border-zinc-800 hover:bg-[#18181b] cursor-pointer"
-                    data-testid={`endpoint-${i}`}
+                    data-testid={`endpoint-${ep.method}-${ep.path}`}
                   >
                     <td className="px-3 py-2 align-top w-16">
                       <span

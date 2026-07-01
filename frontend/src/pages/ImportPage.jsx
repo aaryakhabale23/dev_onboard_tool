@@ -36,7 +36,7 @@ export default function ImportPage() {
       const r = await listRepos();
       setRepos(r);
     } catch (e) {
-      // ignore
+      console.error("failed to list repos:", e);
     }
   };
 

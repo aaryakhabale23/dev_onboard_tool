@@ -60,8 +60,8 @@ export default function DependencyGraphView({ repoId, onOpenFile }) {
     }));
     const rfEdges = data.edges
       .filter((e) => nodeSet.has(e.source) && nodeSet.has(e.target))
-      .map((e, i) => ({
-        id: `e${i}`,
+      .map((e) => ({
+        id: `${e.source}->${e.target}`,
         source: e.source,
         target: e.target,
         style: { stroke: "#3f3f46", strokeWidth: 1 },

@@ -80,7 +80,7 @@ export default function CodeViewer({ repoId, path, gotoLine }) {
               const highlighted = gotoLine === num;
               return (
                 <tr
-                  key={i}
+                  key={num}
                   data-line={num}
                   className={highlighted ? "bg-yellow-400/10" : ""}
                 >

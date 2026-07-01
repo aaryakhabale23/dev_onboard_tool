@@ -66,8 +66,8 @@ export default function RepoDashboard() {
           setViewKey((k) => k + 1);
           toast.success("Repo changed — re-analyzed", { id: "watch-sync" });
         }
-      } catch (e) {
-        // ignore
+      } catch (err) {
+        console.error("watch poll failed:", err);
       }
     }, 3000);
     return () => clearInterval(t);
@@ -82,8 +82,8 @@ export default function RepoDashboard() {
       try {
         const r = await searchRepo(repoId, q);
         setSearchResults(r.results || []);
-      } catch (e) {
-        // noop
+      } catch (err) {
+        console.error("search failed:", err);
       }
     }, 250);
     return () => clearTimeout(t);
@@ -154,9 +154,9 @@ export default function RepoDashboard() {
               data-testid="search-results"
               className="absolute right-0 top-full mt-1 w-96 max-h-96 overflow-auto bg-[#121214] border border-zinc-800 z-50"
             >
-              {searchResults.map((r, i) => (
+              {searchResults.map((r) => (
                 <button
-                  key={i}
+                  key={`${r.file}-${r.line}-${r.kind}`}
                   onMouseDown={() => openFile(r.file, r.line)}
                   className="w-full text-left px-3 py-2 hover:bg-[#18181b] border-b border-zinc-800 last:border-b-0"
                 >

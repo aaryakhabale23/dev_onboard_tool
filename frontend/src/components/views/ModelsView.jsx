@@ -47,10 +47,10 @@ export default function ModelsView({ repoId, onOpenFile }) {
             no models detected. supported: pydantic, sqlalchemy, mongoose.
           </div>
         ) : (
-          list.map((m, i) => (
+          list.map((m) => (
             <button
-              key={i}
-              data-testid={`model-${i}`}
+              key={`${m.file}-${m.name}-${m.line}`}
+              data-testid={`model-${m.name}`}
               onClick={() => onOpenFile(m.file, m.line)}
               className="text-left border border-zinc-800 -ml-px -mt-px hover:border-yellow-400 bg-[#121214] hover:bg-[#18181b] transition-colors"
             >
