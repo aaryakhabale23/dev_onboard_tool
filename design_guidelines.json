@@ -1,0 +1,67 @@
+{
+  "theme": "Dark",
+  "archetype": "Archetype 4: Swiss & High-Contrast",
+  "rationale": "Developer tools require high clarity, extended session comfort, and a data-dense layout. Dark mode is standard. We use a technical 'Grid Borders' style to expose the skeleton of the app, fitting the 'CodeLens' visualizer theme.",
+  "color_palette": {
+    "background": "#09090B",
+    "surface": "#121214",
+    "surface_hover": "#18181B",
+    "border": "#27272A",
+    "border_focus": "#FACC15",
+    "text_primary": "#FAFAFA",
+    "text_secondary": "#A1A1AA",
+    "accent": "#FACC15",
+    "danger": "#EF4444",
+    "success": "#10B981"
+  },
+  "typography": {
+    "heading_font": "IBM Plex Sans",
+    "body_font": "IBM Plex Sans",
+    "code_font": "JetBrains Mono",
+    "hierarchy": {
+      "h1": "text-3xl tracking-tighter font-semibold text-zinc-50",
+      "h2": "text-2xl tracking-tight font-medium text-zinc-50",
+      "h3": "text-lg tracking-tight font-medium text-zinc-50",
+      "h4": "text-base tracking-tight font-medium text-zinc-100",
+      "body": "text-sm leading-relaxed text-zinc-300",
+      "code": "text-xs tracking-tight font-mono text-zinc-300",
+      "overline": "text-[10px] uppercase tracking-[0.2em] text-zinc-500"
+    }
+  },
+  "spacing_and_layout": {
+    "philosophy": "The Control Room Grid",
+    "general": "Dense, 100vh layout with rigid panels. Scrollable inner areas. No soft rounded corners; use rounded-none or max 4px radius.",
+    "sidebar": "w-64 border-r border-zinc-800 flex-shrink-0 bg-[#09090B] h-full flex flex-col",
+    "main_content": "flex-1 flex flex-col h-full overflow-hidden bg-[#09090B]",
+    "right_panel": "w-80 border-l border-zinc-800 flex-shrink-0 bg-[#121214] h-full flex flex-col"
+  },
+  "component_styles": {
+    "buttons": "Flat, sharp corners (rounded-none), 1px solid border. Hover state lifts slightly with solid shadow or alters border color to accent.",
+    "cards": "border-zinc-800 border bg-[#121214] p-4 rounded-none",
+    "inputs": "bg-[#09090B] border-zinc-800 border focus:border-yellow-400 focus:outline-none focus:ring-1 focus:ring-yellow-400 rounded-none px-3 py-2 text-sm",
+    "tabs": "flex border-b border-zinc-800. Active tab has border-b-2 border-yellow-400 text-zinc-50. Inactive text-zinc-400 hover:text-zinc-200. No background changes.",
+    "tree_view": "Hover row bg-zinc-800/50. Left border indicator (2px yellow) for active file. Mono font for file names.",
+    "graphs_diagrams": "Nodes should be sharp rectangles with 1px border. Dark background with subtle grid pattern. Edges should be straight or orthogonal, not curved.",
+    "badges": "px-1.5 py-0.5 border border-zinc-700 bg-zinc-800 text-[10px] uppercase tracking-wider font-mono text-zinc-300"
+  },
+  "visual_enhancers": {
+    "grid_borders": "The skeleton is visible. Use border-collapse style layout for tables, property lists, and layout panels.",
+    "glassmorphism": "Strictly avoided. Use solid dark backgrounds for maximum technical legibility.",
+    "retro_futurism": "Subtle yellow highlighting for active/selected nodes. Mono-spaced typographic scale for all data points."
+  },
+  "icons_and_assets": {
+    "library": "lucide-react",
+    "style": "1px stroke, sharp, unopinionated. Size 16px for inline, 20px for sidebar.",
+    "image_urls": {}
+  },
+  "instructions_to_main_agent": [
+    "Install Google Fonts 'IBM Plex Sans' and 'JetBrains Mono'.",
+    "Use .js/.jsx files exclusively, DO NOT use .tsx as this environment uses JavaScript.",
+    "Implement a strict 3-pane IDE layout for the main CodeLens view: Sidebar (nav/tree), Center (code/graph/diff), Right (annotations).",
+    "Do not use card components with soft shadows. Use sharp 1px borders and flat colors across the board.",
+    "For the Dependency Graph and Architecture diagram, you may use standard DOM nodes positioned absolutely, or an SVG canvas if applicable, ensuring technical aesthetic with right-angled connection lines.",
+    "Apply 'data-testid' to all interactive and key informational elements (e.g., tabs, tree nodes, graph nodes, annotation inputs).",
+    "Use raw HTML/Tailwind for structural layout instead of Shadcn containers to maintain the rigid 'Control Room' app-like aesthetic.",
+    "Ensure hover states explicitly set text color to ensure contrast is maintained against dark backgrounds."
+  ]
+}
