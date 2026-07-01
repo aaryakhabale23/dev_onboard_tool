@@ -36,6 +36,10 @@ export const getGitDiff = (id) => api.get(`/repos/${id}/git-diff`).then((r) => r
 export const searchRepo = (id, q) =>
   api.get(`/repos/${id}/search`, { params: { q } }).then((r) => r.data);
 
+export const setWatch = (id, enabled) =>
+  api.post(`/repos/${id}/watch`, { enabled }).then((r) => r.data);
+export const refreshRepo = (id) => api.post(`/repos/${id}/refresh`).then((r) => r.data);
+
 export const listAnnotations = (id, filePath) =>
   api
     .get(`/repos/${id}/annotations`, { params: filePath ? { file_path: filePath } : {} })

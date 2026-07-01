@@ -3,13 +3,15 @@ from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
+import asyncio
 import logging
 import tempfile
 import uuid
 from pathlib import Path
 from typing import List, Optional
+from pydantic import BaseModel
 
-from models import Repo, Annotation, ImportLocalRequest, ImportGithubRequest, AnnotationCreate
+from models import Repo, Annotation, ImportLocalRequest, ImportGithubRequest, AnnotationCreate, now_iso
 import repo_manager
 import parsers
 
@@ -73,6 +75,7 @@ async def import_local(req: ImportLocalRequest):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     tree_data = parsers.build_tree(str(dest))
+    sig = repo_manager.compute_signature(req.path)
     repo = Repo(
         id=repo_id,
         name=req.name or Path(req.path).name or "local-repo",
@@ -81,6 +84,8 @@ async def import_local(req: ImportLocalRequest):
         storage_path=str(dest),
         file_count=tree_data["file_count"],
         has_git=repo_manager.has_git(dest),
+        last_synced_at=now_iso(),
+        last_signature=sig,
     )
     await db.repos.insert_one(repo.model_dump())
     return repo
@@ -234,6 +239,42 @@ async def search_repo(repo_id: str, q: str, limit: int = 100):
     return {"results": results[:limit]}
 
 
+class WatchToggle(BaseModel):
+    enabled: bool
+
+
+@api_router.post("/repos/{repo_id}/refresh", response_model=Repo)
+async def refresh_repo(repo_id: str):
+    repo = await get_repo_or_404(repo_id)
+    if repo.source != "local":
+        raise HTTPException(status_code=400, detail="only_local_repos_can_refresh")
+    try:
+        dest = repo_manager.resync_local(repo_id, repo.source_ref)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    tree_data = parsers.build_tree(str(dest))
+    sig = repo_manager.compute_signature(repo.source_ref)
+    updates = {
+        "file_count": tree_data["file_count"],
+        "has_git": repo_manager.has_git(dest),
+        "last_synced_at": now_iso(),
+        "last_signature": sig,
+    }
+    await db.repos.update_one({"id": repo_id}, {"$set": updates})
+    doc = await db.repos.find_one({"id": repo_id}, {"_id": 0})
+    return Repo(**doc)
+
+
+@api_router.post("/repos/{repo_id}/watch", response_model=Repo)
+async def toggle_watch(repo_id: str, payload: WatchToggle):
+    repo = await get_repo_or_404(repo_id)
+    if repo.source != "local":
+        raise HTTPException(status_code=400, detail="only_local_repos_can_watch")
+    await db.repos.update_one({"id": repo_id}, {"$set": {"watch_enabled": payload.enabled}})
+    doc = await db.repos.find_one({"id": repo_id}, {"_id": 0})
+    return Repo(**doc)
+
+
 app.include_router(api_router)
 
 app.add_middleware(
@@ -248,6 +289,53 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(level
 logger = logging.getLogger(__name__)
 
 
+WATCH_INTERVAL_SEC = 4
+_watch_task: Optional[asyncio.Task] = None
+
+
+async def watch_loop():
+    while True:
+        try:
+            docs = await db.repos.find(
+                {"watch_enabled": True, "source": "local"}, {"_id": 0}
+            ).to_list(500)
+            for doc in docs:
+                repo = Repo(**doc)
+                try:
+                    sig = repo_manager.compute_signature(repo.source_ref)
+                except Exception as e:
+                    logger.warning(f"signature failed for {repo.id}: {e}")
+                    continue
+                if sig and sig != (repo.last_signature or ""):
+                    logger.info(f"watch: change detected in {repo.name} — resyncing")
+                    try:
+                        dest = repo_manager.resync_local(repo.id, repo.source_ref)
+                        tree_data = parsers.build_tree(str(dest))
+                        await db.repos.update_one(
+                            {"id": repo.id},
+                            {"$set": {
+                                "file_count": tree_data["file_count"],
+                                "has_git": repo_manager.has_git(dest),
+                                "last_synced_at": now_iso(),
+                                "last_signature": sig,
+                            }},
+                        )
+                    except Exception as e:
+                        logger.error(f"resync failed for {repo.id}: {e}")
+        except Exception as e:
+            logger.error(f"watch_loop error: {e}")
+        await asyncio.sleep(WATCH_INTERVAL_SEC)
+
+
+@app.on_event("startup")
+async def start_watcher():
+    global _watch_task
+    _watch_task = asyncio.create_task(watch_loop())
+
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
+    global _watch_task
+    if _watch_task:
+        _watch_task.cancel()
     client.close()

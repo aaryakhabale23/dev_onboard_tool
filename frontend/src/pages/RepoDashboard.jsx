@@ -12,8 +12,11 @@ import {
   Search,
   Boxes,
   MessageSquare,
+  RefreshCw,
+  Eye,
+  EyeOff,
 } from "lucide-react";
-import { getRepo, searchRepo } from "../lib/api";
+import { getRepo, searchRepo, setWatch, refreshRepo } from "../lib/api";
 import Overview from "../components/views/Overview";
 import ExplorerView from "../components/views/ExplorerView";
 import DependencyGraphView from "../components/views/DependencyGraphView";
@@ -22,6 +25,7 @@ import ModelsView from "../components/views/ModelsView";
 import ComponentsView from "../components/views/ComponentsView";
 import GitDiffView from "../components/views/GitDiffView";
 import AnnotationsPanel from "../components/AnnotationsPanel";
+import { toast } from "sonner";
 
 const NAV = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
@@ -42,10 +46,32 @@ export default function RepoDashboard() {
   const [q, setQ] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [viewKey, setViewKey] = useState(0);
 
   useEffect(() => {
     getRepo(repoId).then(setRepo).catch(() => nav("/"));
   }, [repoId, nav]);
+
+  // Poll repo status to detect auto-syncs from watch loop
+  useEffect(() => {
+    if (!repo?.watch_enabled) return;
+    let lastSync = repo.last_synced_at;
+    const t = setInterval(async () => {
+      try {
+        const fresh = await getRepo(repoId);
+        if (fresh.last_synced_at && fresh.last_synced_at !== lastSync) {
+          lastSync = fresh.last_synced_at;
+          setRepo(fresh);
+          setViewKey((k) => k + 1);
+          toast.success("Repo changed — re-analyzed", { id: "watch-sync" });
+        }
+      } catch (e) {
+        // ignore
+      }
+    }, 3000);
+    return () => clearInterval(t);
+  }, [repo?.watch_enabled, repo?.last_synced_at, repoId]);
 
   useEffect(() => {
     if (!q || q.length < 2) {
@@ -156,6 +182,59 @@ export default function RepoDashboard() {
           <MessageSquare className="w-3 h-3" />
           Notes
         </button>
+
+        {repo.source === "local" && (
+          <>
+            <button
+              data-testid="refresh-repo"
+              onClick={async () => {
+                setRefreshing(true);
+                try {
+                  const fresh = await refreshRepo(repoId);
+                  setRepo(fresh);
+                  setViewKey((k) => k + 1);
+                  toast.success("Re-analyzed");
+                } catch (e) {
+                  toast.error("Refresh failed");
+                } finally {
+                  setRefreshing(false);
+                }
+              }}
+              disabled={refreshing}
+              title="Re-analyze source directory"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-mono uppercase tracking-wider border border-zinc-800 text-zinc-400 hover:text-zinc-100 disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3 h-3 ${refreshing ? "animate-spin" : ""}`} />
+              Refresh
+            </button>
+            <button
+              data-testid="toggle-watch"
+              onClick={async () => {
+                try {
+                  const next = !repo.watch_enabled;
+                  const fresh = await setWatch(repoId, next);
+                  setRepo(fresh);
+                  toast.success(next ? "Watch mode ON" : "Watch mode OFF");
+                } catch (e) {
+                  toast.error("Toggle failed");
+                }
+              }}
+              title="Auto re-analyze on file changes"
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-mono uppercase tracking-wider border ${
+                repo.watch_enabled
+                  ? "border-emerald-400 text-emerald-400"
+                  : "border-zinc-800 text-zinc-400 hover:text-zinc-100"
+              }`}
+            >
+              {repo.watch_enabled ? (
+                <Eye className="w-3 h-3" />
+              ) : (
+                <EyeOff className="w-3 h-3" />
+              )}
+              {repo.watch_enabled ? "Watching" : "Watch"}
+            </button>
+          </>
+        )}
       </header>
 
       <div className="flex-1 flex overflow-hidden">
@@ -194,7 +273,7 @@ export default function RepoDashboard() {
         </aside>
 
         {/* Main */}
-        <main className="flex-1 min-w-0 overflow-hidden flex flex-col" data-testid="main-view">
+        <main className="flex-1 min-w-0 overflow-hidden flex flex-col" data-testid="main-view" key={viewKey}>
           {view === "overview" && <Overview repoId={repoId} onOpenFile={openFile} />}
           {view === "explorer" && (
             <ExplorerView

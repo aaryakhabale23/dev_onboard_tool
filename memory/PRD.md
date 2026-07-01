@@ -28,6 +28,7 @@
 - [x] Annotations panel: per-file & global notes with line refs
 - [x] Full-repo search (filename + content)
 - [x] Delete repo (also purges storage + annotations)
+- [x] **Live Watch Mode** for local paths (2026-07-01): backend polls signature (mtime+size hash) every 4s, auto-resyncs on change; frontend "Watching" toggle + toast on auto-sync + view refresh. Manual "Refresh" button also available.
 
 ## Backlog (P1)
 - Persistent color-coded language legend on dep graph

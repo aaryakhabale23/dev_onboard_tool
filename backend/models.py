@@ -19,6 +19,9 @@ class Repo(BaseModel):
     created_at: str = Field(default_factory=now_iso)
     file_count: int = 0
     has_git: bool = False
+    watch_enabled: bool = False
+    last_synced_at: Optional[str] = None
+    last_signature: Optional[str] = None
 
 
 class Annotation(BaseModel):

@@ -157,3 +157,39 @@ def git_diff(path: Path) -> Dict[str, Any]:
         branch = "(detached)"
 
     return {"branch": branch, "changed_files": changed_files, "recent_commits": commits}
+
+
+
+def compute_signature(source_path: str) -> str:
+    """Hash-like signature of a directory tree based on file mtimes + sizes.
+    Used to detect changes without watchdog. Skips ignored dirs."""
+    import hashlib
+
+    IGNORE = {"node_modules", ".git", "__pycache__", ".venv", "venv", "dist",
+              "build", ".next", ".cache", ".pytest_cache", ".mypy_cache",
+              ".idea", ".vscode", "target", "out", ".turbo"}
+    h = hashlib.md5()
+    root = Path(source_path)
+    if not root.exists():
+        return ""
+    entries = []
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = sorted(d for d in dirnames if d not in IGNORE)
+        for f in sorted(filenames):
+            fp = Path(dirpath) / f
+            try:
+                st = fp.stat()
+                rel = str(fp.relative_to(root))
+                entries.append(f"{rel}|{st.st_size}|{int(st.st_mtime)}")
+            except OSError:
+                continue
+    h.update("\n".join(entries).encode("utf-8"))
+    return h.hexdigest()
+
+
+def resync_local(repo_id: str, source_path: str) -> Path:
+    """Delete storage dir and re-ingest from source."""
+    dest = repo_dir(repo_id)
+    if dest.exists():
+        shutil.rmtree(dest, ignore_errors=True)
+    return ingest_local(repo_id, source_path)
