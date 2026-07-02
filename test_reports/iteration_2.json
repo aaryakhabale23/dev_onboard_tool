@@ -1,0 +1,25 @@
+{
+  "summary": "Iteration 2 backend regression after requirements.txt cleanup (removed private Emergent litellm URL). All 13 backend checks pass. Backend running via supervisor with trimmed deps (fastapi, uvicorn, python-dotenv, python-multipart, motor, pymongo, pydantic, GitPython). No regressions detected.",
+  "tested_scope": ["backend", "integration"],
+  "passed": [
+    "GET /api/ -> {service:codelens,status:ok}",
+    "POST /api/repos/local {path:/app/backend} -> Repo with last_signature (sha256) and last_synced_at",
+    "GET /api/repos/{id}/overview -> frameworks=[FastAPI, MongoDB], stats.python_files=4 (non-zero; matches actual .py count in /app/backend)",
+    "GET /api/repos/{id}/endpoints -> 21 endpoints (>15)",
+    "GET /api/repos/{id}/models -> 6 Pydantic models (Repo, Annotation, ImportLocalRequest, ImportGithubRequest, AnnotationCreate, WatchToggle); all (name,file,line) tuples unique (no duplicates)",
+    "GET /api/repos/{id}/dependencies -> nodes=4, edges=3 (non-zero)",
+    "GET /api/repos/{id}/file?path=server.py -> content length 11660",
+    "GET /api/repos/{id}/search?q=BaseModel -> multiple hits across parsers.py, models.py, server.py",
+    "Annotations CRUD: POST creates (id returned), GET lists it, DELETE returns {deleted:true}, GET list empty after",
+    "POST /api/repos/{id}/watch {enabled:true} -> watch_enabled=true persisted",
+    "LIVE WATCH: modified /tmp/watchtest/app.py after enabling watch; within ~8s last_synced_at advanced and last_signature changed; refreshed file content contains new /new route and 'changed' token",
+    "POST /api/repos/{id}/refresh -> repo doc returned, last_synced_at updated",
+    "DELETE /api/repos/{id} -> {deleted:true}, storage dir removed (verified /app/storage/repos no longer contains ids), annotations list already empty"
+  ],
+  "failed": [],
+  "action_items": [],
+  "success_rate": {"backend": "100%", "frontend": "not tested (per request)"},
+  "retest_needed": false,
+  "full_testing_deferred": true,
+  "notes": "requirements.txt now has 8 lines only; backend supervisor process RUNNING; test_credentials.md not required (no auth in this app)."
+}
